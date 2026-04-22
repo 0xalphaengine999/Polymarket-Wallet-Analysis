@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Polymarket — wallet dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-grid"></div>
+    <div class="app">
+      <header class="header">
+        <div class="brand">
+          <span class="logo" aria-hidden="true">◈</span>
+          <div>
+            <h1>Wallet dashboard</h1>
+            <p class="subtitle">Sync from Polymarket Data API, charts from <code>analyze.py</code></p>
+          </div>
+        </div>
+        <div class="health" id="health" hidden></div>
+      </header>
+
+      <section class="panel add-panel">
+        <h2 class="visually-hidden">Add wallet</h2>
+        <div class="add-row">
+          <input
+            type="text"
+            id="newWallet"
+            class="input"
+            placeholder="0x… wallet (42 chars)"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button type="button" class="btn btn-primary" id="addBtn">Add wallet</button>
+        </div>
+        <p class="hint">Stored in <code>walletList</code>. <strong>Refresh</strong> runs the same in-process sync as <code>getPositions.ts</code> (last 30 days) — no shell. <strong>Launch</strong> charts are <strong>all markets</strong> by default (like <code>analyze.py --all --last-month</code>), in-process.</p>
+      </section>
+
+      <section class="panel list-panel">
+        <div class="list-head">
+          <h2>Wallets</h2>
+          <button type="button" class="btn btn-ghost btn-sm" id="reloadWallets" title="Reload from DB">↻</button>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Wallets list">
+          <div class="row row-head" aria-hidden="true">
+            <span>Address</span>
+            <span>Last updated</span>
+            <span class="col-actions">Actions</span>
+          </div>
+          <div id="walletList"></div>
+          <div id="empty" class="empty" hidden>
+            <p>No wallets yet. Add an address above, then refresh to sync from the API.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="log-dock" aria-label="Log output">
+      <div class="log-head">
+        <span class="log-title">Log</span>
+        <div class="log-tools">
+          <span class="log-pill" id="logState">Ready</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="clearLog" title="Clear">Clear</button>
+        </div>
+      </div>
+      <pre class="log-body" id="logPanel" role="log"></pre>
+    </div>
+
+    <div class="modal-backdrop" id="graphModal" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="graphModalTitle">
+        <h2 id="graphModalTitle" class="modal-title">Open chart</h2>
+        <p class="modal-desc" id="graphModalFor"></p>
+        <fieldset class="graph-closed-pick" aria-label="Closed positions data source">
+          <legend>Closed PnL from</legend>
+          <div class="graph-closed-opts">
+            <label class="graph-radio"
+              ><input type="radio" name="graphClosedFrom" value="api" checked /> <code>closedPositions</code>
+              (Data API)</label
+            >
+            <label class="graph-radio"
+              ><input type="radio" name="graphClosedFrom" value="polished" />
+              <code>polishedClosedPositions</code> (recomputed)</label
+            >
+          </div>
+        </fieldset>
+        <div class="modal-choices">
+          <button type="button" class="btn btn-glass" data-kind="daily" id="choiceDaily">Daily PnL</button>
+          <button type="button" class="btn btn-glass" data-kind="count" id="choiceCount">Count heatmap</button>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn btn-ghost" id="graphModalCancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="resultModal" hidden>
+      <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="resultModalTitle">
+        <h2 id="resultModalTitle" class="modal-title">Result</h2>
+        <div class="result-img-wrap" id="resultImageWrap" hidden>
+          <img id="resultImage" alt="Chart" />
+        </div>
+        <pre class="log-body log-body-sm" id="resultLog"></pre>
+        <div class="modal-foot">
+          <a class="btn btn-primary" id="resultOpen" href="#" target="_blank" rel="noopener" hidden> Open image </a>
+          <button type="button" class="btn btn-ghost" id="resultClose">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
