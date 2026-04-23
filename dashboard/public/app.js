@@ -52,6 +52,53 @@ async function loadWallets() {
  * @param {string} address
  * @param {HTMLButtonElement} btn
  */
+/**
+ * @param {string} address
+ * @param {HTMLButtonElement} [btn]
+ */
+async function doDeleteWallet(address, btn) {
+  const ok = window.confirm(
+    "Remove this wallet and delete all stored data for it?\n\n" +
+      "This deletes:\n" +
+      "• walletList row\n" +
+      "• positions, closedPositions, polishedClosedPositions, trades (CASCADE)\n\n" +
+      `${address}\n\n` +
+      "This cannot be undone."
+  );
+  if (!ok) return;
+  if (btn) btn.disabled = true;
+  setLogState("Deleting…", true);
+  logLine(
+    `Delete ${address} from database (CASCADE: positions, closedPositions, polishedClosedPositions, trades)`
+  );
+  try {
+    const res = await fetch(
+      "/api/wallets?address=" + encodeURIComponent(address),
+      { method: "DELETE" }
+    );
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      logLine(`Delete failed: ${d.error || res.statusText}`);
+      setLogState("Error", false);
+      if (btn) btn.disabled = false;
+      return;
+    }
+    logLine(`Removed ${d.userAddress || address}`);
+    setLogState("Ready", false);
+    if (btn) btn.disabled = false;
+    void renderWallets();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    logLine(`Delete error: ${msg}`);
+    setLogState("Error", false);
+    if (btn) btn.disabled = false;
+  }
+}
+
+/**
+ * @param {string} address
+ * @param {HTMLButtonElement} btn
+ */
 async function doRefresh(address, btn) {
   if (btn) btn.disabled = true;
   setLogState("Refreshing…", true);
@@ -186,7 +233,15 @@ function displayRows(rows) {
     go.type = "button";
     go.textContent = "Launch";
     go.addEventListener("click", () => openGraphModal(w.userAddress));
-    act.append(br, go);
+    const del = document.createElement("button");
+    del.className = "btn btn-ghost btn-sm btn-danger";
+    del.type = "button";
+    del.title = "Remove wallet and all its positions, closed, polished, and trades in the DB";
+    del.textContent = "Delete";
+    del.addEventListener("click", () => {
+      void doDeleteWallet(w.userAddress, del);
+    });
+    act.append(br, go, del);
     row.append(addr, up, act);
     walletListEl.appendChild(row);
   }

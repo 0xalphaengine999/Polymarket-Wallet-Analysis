@@ -110,6 +110,40 @@ app.post("/api/wallets", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Removes the wallet from `walletList`. Child rows in positions, "closedPositions",
+ * "polishedClosedPositions", and trades are removed by ON DELETE CASCADE.
+ */
+app.delete("/api/wallets", async (req: Request, res: Response) => {
+  if (!requireDbJson(res) || !pool) return;
+  const q = req.query;
+  const raw =
+    typeof q.address === "string"
+      ? q.address
+      : Array.isArray(q.address) && typeof q.address[0] === "string"
+        ? q.address[0]
+        : "";
+  if (!isEthAddress(raw)) {
+    res.status(400).json({ error: "Valid 0x + 40 hex address in ?address= is required" });
+    return;
+  }
+  const address = normalizeAddress(raw);
+  try {
+    const r = await pool.query(
+      'DELETE FROM "walletList" WHERE user_address = $1 RETURNING user_address',
+      [address]
+    );
+    if (r.rowCount === 0) {
+      res.status(404).json({ error: "Wallet not in list" });
+      return;
+    }
+    res.json({ ok: true, userAddress: address });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: String(e) });
+  }
+});
+
 app.post("/api/refresh", async (req: Request, res: Response) => {
   if (!process.env.DATABASE_URL) {
     res.status(503).end("DATABASE_URL is not set.\n");

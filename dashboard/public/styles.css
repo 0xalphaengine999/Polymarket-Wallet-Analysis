@@ -279,6 +279,15 @@ body {
   border-color: #4a5565;
   color: var(--text);
 }
+.btn-ghost.btn-danger {
+  color: #e8a0a0;
+  border-color: #4a2a2e;
+}
+.btn-ghost.btn-danger:hover:not(:disabled) {
+  background: rgba(200, 80, 80, 0.12);
+  border-color: #6a3a3e;
+  color: #ffcccc;
+}
 .btn-sm {
   font-size: 0.8rem;
   padding: 0.35rem 0.5rem;
