@@ -404,8 +404,12 @@ async function ensurePolymarketSchema(pool: Pool): Promise<void> {
     last_month_days INT,
     since_iso TEXT,
     window_time_source_note TEXT,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_favorite BOOLEAN NOT NULL DEFAULT false
   )`);
+  await pool.query(
+    `ALTER TABLE "walletList" ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN NOT NULL DEFAULT false`
+  );
   await pool.query(`CREATE TABLE IF NOT EXISTS positions (
     id BIGSERIAL PRIMARY KEY,
     user_address TEXT NOT NULL REFERENCES "walletList" (user_address) ON DELETE CASCADE,

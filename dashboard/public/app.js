@@ -50,8 +50,41 @@ async function loadWallets() {
 
 /**
  * @param {string} address
- * @param {HTMLButtonElement} btn
+ * @param {boolean} isFavorite
+ * @param {HTMLButtonElement} [btn]
  */
+async function doToggleFavorite(address, isFavorite, btn) {
+  if (btn) btn.disabled = true;
+  setLogState("Saving…", true);
+  try {
+    const res = await fetch("/api/wallets", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address, isFavorite }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      logLine(`Favorite update failed: ${d.error || res.statusText}`);
+      setLogState("Error", false);
+      if (btn) btn.disabled = false;
+      return;
+    }
+    logLine(
+      isFavorite
+        ? `Favorited ${d.userAddress || address}`
+        : `Unfavorited ${d.userAddress || address}`
+    );
+    setLogState("Ready", false);
+    if (btn) btn.disabled = false;
+    void renderWallets();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    logLine(`Favorite error: ${msg}`);
+    setLogState("Error", false);
+    if (btn) btn.disabled = false;
+  }
+}
+
 /**
  * @param {string} address
  * @param {HTMLButtonElement} [btn]
@@ -203,14 +236,28 @@ function closeGraphModal() {
 }
 
 /**
- * @param {Array<{ userAddress: string; updatedAt: string | null }>} rows
+ * @param {Array<{ userAddress: string; updatedAt: string | null; isFavorite?: boolean }>} rows
  */
 function displayRows(rows) {
   walletListEl.innerHTML = "";
   emptyEl.hidden = rows.length > 0;
   for (const w of rows) {
     const row = document.createElement("div");
-    row.className = "row";
+    const fav = Boolean(w.isFavorite);
+    row.className = "row" + (fav ? " row-fav" : "");
+    const favCell = document.createElement("div");
+    favCell.className = "col-fav";
+    const star = document.createElement("button");
+    star.type = "button";
+    star.className = "btn-fav" + (fav ? " is-on" : "");
+    star.setAttribute("aria-pressed", fav ? "true" : "false");
+    star.setAttribute("aria-label", fav ? "Remove from favorites" : "Add to favorites");
+    star.title = fav ? "Remove from favorites" : "Add to favorites";
+    star.textContent = fav ? "★" : "☆";
+    star.addEventListener("click", () => {
+      void doToggleFavorite(w.userAddress, !fav, star);
+    });
+    favCell.appendChild(star);
     const addr = document.createElement("span");
     addr.className = "addr";
     addr.textContent = w.userAddress;
@@ -242,7 +289,7 @@ function displayRows(rows) {
       void doDeleteWallet(w.userAddress, del);
     });
     act.append(br, go, del);
-    row.append(addr, up, act);
+    row.append(favCell, addr, up, act);
     walletListEl.appendChild(row);
   }
 }

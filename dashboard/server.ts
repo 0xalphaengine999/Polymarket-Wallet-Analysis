@@ -65,9 +65,11 @@ app.get("/api/wallets", async (_req: Request, res: Response) => {
       since_iso: string | null;
       window_time_source_note: string | null;
       updated_at: Date;
+      is_favorite: boolean;
     }>(
-      `SELECT user_address, since_timestamp_sec, last_month_days, since_iso, window_time_source_note, updated_at
-       FROM "walletList" ORDER BY updated_at DESC NULLS LAST, user_address ASC`
+      `SELECT user_address, since_timestamp_sec, last_month_days, since_iso, window_time_source_note, updated_at, is_favorite
+       FROM "walletList"
+       ORDER BY is_favorite DESC, updated_at DESC NULLS LAST, user_address ASC`
     );
     res.json(
       rows.map((r) => ({
@@ -77,6 +79,7 @@ app.get("/api/wallets", async (_req: Request, res: Response) => {
         sinceIso: r.since_iso,
         windowNote: r.window_time_source_note,
         updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
+        isFavorite: Boolean(r.is_favorite),
       }))
     );
   } catch (e) {
@@ -104,6 +107,34 @@ app.post("/api/wallets", async (req: Request, res: Response) => {
       [address]
     );
     res.json({ ok: true, userAddress: address });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: String(e) });
+  }
+});
+
+app.patch("/api/wallets", async (req: Request, res: Response) => {
+  if (!requireDbJson(res) || !pool) return;
+  const body = req.body as { address?: unknown; isFavorite?: unknown };
+  if (typeof body.address !== "string" || !isEthAddress(body.address)) {
+    res.status(400).json({ error: "Valid 0x + 40 hex address required" });
+    return;
+  }
+  if (typeof body.isFavorite !== "boolean") {
+    res.status(400).json({ error: "isFavorite (boolean) is required" });
+    return;
+  }
+  const address = normalizeAddress(body.address);
+  try {
+    const u = await pool.query(
+      `UPDATE "walletList" SET is_favorite = $2 WHERE user_address = $1`,
+      [address, body.isFavorite]
+    );
+    if (u.rowCount === 0) {
+      res.status(404).json({ error: "Wallet not in list" });
+      return;
+    }
+    res.json({ ok: true, userAddress: address, isFavorite: body.isFavorite });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: String(e) });
@@ -221,10 +252,24 @@ app.use(
   })
 );
 
-app.listen(DASHBOARD_PORT, "127.0.0.1", () => {
-  // eslint-disable-next-line no-console
-  console.log(`[dashboard] http://127.0.0.1:${DASHBOARD_PORT}`);
-});
+async function startDashboard(): Promise<void> {
+  if (pool) {
+    try {
+      await pool.query(
+        `ALTER TABLE "walletList" ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN NOT NULL DEFAULT false`
+      );
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[dashboard] walletList is_favorite migration:", e);
+    }
+  }
+  app.listen(DASHBOARD_PORT, "127.0.0.1", () => {
+    // eslint-disable-next-line no-console
+    console.log(`[dashboard] http://127.0.0.1:${DASHBOARD_PORT}`);
+  });
+}
+
+void startDashboard();
 
 process.on("SIGINT", () => {
   if (pool) {

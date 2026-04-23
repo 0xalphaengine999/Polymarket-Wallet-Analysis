@@ -8,8 +8,12 @@ CREATE TABLE IF NOT EXISTS "walletList" (
   last_month_days INT,
   since_iso TEXT,
   window_time_source_note TEXT,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  is_favorite BOOLEAN NOT NULL DEFAULT false
 );
+
+-- Existing DBs created before is_favorite: add column when missing
+ALTER TABLE "walletList" ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN NOT NULL DEFAULT false;
 
 -- GET /positions: one row per open position
 CREATE TABLE IF NOT EXISTS positions (

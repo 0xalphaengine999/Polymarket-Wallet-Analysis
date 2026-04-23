@@ -175,11 +175,41 @@ body {
 .row-head,
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.75fr) auto;
+  grid-template-columns: 2.25rem minmax(0, 1.4fr) minmax(0, 0.75fr) auto;
   gap: 0.6rem 1rem;
   align-items: center;
   padding: 0.5rem 0.65rem;
   font-size: 0.9rem;
+}
+.col-fav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-fav {
+  font: inherit;
+  line-height: 1;
+  padding: 0.25rem 0.15rem;
+  min-width: 1.75rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: #5a5f70;
+  font-size: 1.1rem;
+  transition: color 0.12s, background 0.12s, transform 0.08s;
+}
+.btn-fav:hover {
+  color: #c9a86a;
+  background: rgba(201, 168, 106, 0.12);
+}
+.btn-fav.is-on {
+  color: #e8c070;
+  text-shadow: 0 0 12px rgba(232, 192, 112, 0.35);
+}
+.btn-fav:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 @media (max-width: 700px) {
   .row-head,
@@ -208,6 +238,14 @@ body {
 .row:hover {
   background: #0f1118;
   border-color: #2a3042;
+}
+.row.row-fav {
+  border-color: #3a3040;
+  background: linear-gradient(90deg, rgba(200, 160, 100, 0.08) 0%, rgba(10, 11, 16, 0.55) 2.5rem);
+}
+.row.row-fav:hover {
+  background: linear-gradient(90deg, rgba(200, 160, 100, 0.12) 0%, #0f1118 2.5rem);
+  border-color: #3a3040;
 }
 .addr {
   font-family: "JetBrains Mono", monospace;
