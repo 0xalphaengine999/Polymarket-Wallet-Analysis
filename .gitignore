@@ -1,5 +1,7 @@
 .env
 graphs/
+node_modules/
+package-lock.json
 __pycache__/
 *.py[cod]
 *.pyo
